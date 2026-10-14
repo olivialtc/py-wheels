@@ -20,10 +20,11 @@ find-links = ["https://olivialtc.github.io/py-wheels/cp315/"]
 
 That page (`index.yml`, GitHub Pages) is a hashed flat index: for each pinned package it lists
 EVERY file PyPI has for that version, with PyPI's sha256, plus the cp315 wheels from the release,
-with the hash the build recorded. uv takes a package it finds there from there alone, which is
-why PyPI's files are listed too: every other interpreter and platform stays installable from
-PyPI's own wheels or sdist, and `uv.lock` stays fully hashed.
+with the hash the build recorded. For a version listed here, uv takes the distributions from this
+page, which is why PyPI's own files are listed too: every other interpreter and platform stays
+installable, and `uv.lock` stays fully hashed. A newer version on PyPI still wins when a lock is
+upgraded, so this pins nothing.
 
-The cost of that: a listed package is pinned to the version listed here. Bumping one means
-editing `requirements.txt` (version and PyPI sdist hash), then running `build.yml` and `index.yml`.
-Retire a package once PyPI ships a cp315 wheel for the version you lock.
+Adding or bumping a package: edit `requirements.txt` (version and PyPI's sdist sha256), then run
+`build.yml`, then `index.yml`. Retire a package once PyPI ships a cp315 wheel for the version the
+repos lock (markupsafe 3.0.4 already does, and qualifies under the 14-day rule on 2026-10-16).
