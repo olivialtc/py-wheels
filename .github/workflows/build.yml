@@ -1,0 +1,64 @@
+# Build cp315 wheels from the pinned, hash-checked PyPI sdists and publish them to a release.
+name: build
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: release tag to publish to
+        default: cp315
+permissions:
+  contents: write
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  wheels:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90  # duckdb from source: ~26 min measured on ubuntu-latest
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "14.0"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: "0.13.0"
+          enable-cache: false
+      - name: Python 3.15
+        run: uv python install 3.15.0
+      - name: build each package from its hash-checked sdist (its dependencies are not built here)
+        run: |
+          set -euo pipefail
+          uv venv -p 3.15.0 .build
+          uv pip install -p .build/bin/python pip
+          # --no-binary names only the three packages, so their build backends come as wheels.
+          .build/bin/python -m pip wheel --no-deps --require-hashes \
+            --no-binary duckdb,pyyaml,markupsafe -r requirements.txt -w dist
+          ls -l dist
+      - name: manylinux tag (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          set -euo pipefail
+          uvx --with patchelf auditwheel repair -w wheelhouse dist/*.whl
+      - name: as built (macOS)
+        if: runner.os == 'macOS'
+        run: mkdir -p wheelhouse && cp dist/*.whl wheelhouse/
+      - name: smoke test under 3.15
+        run: |
+          set -euo pipefail
+          uv venv -p 3.15.0 .t
+          uv pip install -p .t/bin/python --no-index --find-links wheelhouse duckdb pyyaml markupsafe
+          .t/bin/python -c "import duckdb, yaml, markupsafe, sys; print(sys.version); print(duckdb.sql('select 42').fetchall())"
+      - name: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" \
+            --notes "cp315 wheels built from hash-pinned PyPI sdists by build.yml; see README.md." || true
+          (cd wheelhouse && shasum -a 256 *.whl) > "SHA256SUMS-${{ runner.os }}.txt"
+          gh release upload "$TAG" wheelhouse/*.whl "SHA256SUMS-${{ runner.os }}.txt" --clobber
