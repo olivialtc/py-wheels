@@ -9,7 +9,7 @@ PyYAML (MIT), MarkupSafe (BSD-3-Clause).
 
 | release tag | contents |
 |---|---|
-| `cp315` | duckdb 1.5.6, pyyaml 6.0.3, markupsafe 3.0.3 for Linux x86_64 (manylinux) and macOS arm64 |
+| `cp315` | duckdb 1.5.6, pyyaml 6.0.3, markupsafe 3.0.3 for Linux x86_64 and aarch64 (manylinux) and macOS arm64 |
 
 ## Use with uv
 
@@ -26,5 +26,7 @@ installable, and `uv.lock` stays fully hashed. A newer version on PyPI still win
 upgraded, so this pins nothing.
 
 Adding or bumping a package: edit `requirements.txt` (version and PyPI's sdist sha256), then run
-`build.yml`, then `index.yml`. Retire a package once PyPI ships a cp315 wheel for the version the
+`build.yml`, then `index.yml`. Adding a platform: run `build.yml` with `runners` naming ONLY the new
+runner (rebuilding a published platform changes its hashes and breaks the repos' locks), then
+`index.yml`, then re-lock each repo. Retire a package once PyPI ships a cp315 wheel for the version the
 repos lock (markupsafe 3.0.4 already does, and qualifies under the 14-day rule on 2026-10-16).
