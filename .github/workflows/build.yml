@@ -6,6 +6,13 @@ on:
       tag:
         description: release tag to publish to
         default: cp315
+      runners:
+        # Build only the platforms you name. Rebuilding a platform that is already published
+        # changes its wheel hashes and breaks every uv.lock that pinned them, so add a platform
+        # by naming only that runner (2026-10-15: ubuntu-24.04-arm alone, for the Linux aarch64
+        # VM the Claude desktop bridge runs scheduled routines in).
+        description: JSON list of runners to build on
+        default: '["ubuntu-latest", "macos-latest", "ubuntu-24.04-arm"]'
 permissions:
   contents: write
 concurrency:
@@ -16,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: ${{ fromJSON(inputs.runners) }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90  # duckdb from source: ~26 min measured on ubuntu-latest
     env:
@@ -60,5 +67,11 @@ jobs:
           set -euo pipefail
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" \
             --notes "cp315 wheels built from hash-pinned PyPI sdists by build.yml; see README.md." || true
-          (cd wheelhouse && shasum -a 256 *.whl) > "SHA256SUMS-${{ runner.os }}.txt"
-          gh release upload "$TAG" wheelhouse/*.whl "SHA256SUMS-${{ runner.os }}.txt" --clobber
+          # One sums file per OS AND arch: two Linux runners writing SHA256SUMS-Linux.txt would
+          # clobber each other's hashes. x86_64 Linux and arm64 macOS keep their original names.
+          sums="SHA256SUMS-${{ runner.os }}.txt"
+          if [ "${{ runner.os }}" = Linux ] && [ "${{ runner.arch }}" = ARM64 ]; then
+            sums="SHA256SUMS-Linux-aarch64.txt"
+          fi
+          (cd wheelhouse && shasum -a 256 *.whl) > "$sums"
+          gh release upload "$TAG" wheelhouse/*.whl "$sums" --clobber
