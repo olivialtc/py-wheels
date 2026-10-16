@@ -44,7 +44,7 @@ jobs:
           uv pip install -p .build/bin/python pip
           # --no-binary names only the three packages, so their build backends come as wheels.
           .build/bin/python -m pip wheel --no-deps --require-hashes \
-            --no-binary duckdb,pyyaml,markupsafe -r requirements.txt -w dist
+            --no-binary duckdb,pyyaml -r requirements.txt -w dist
           ls -l dist
       - name: manylinux tag (Linux)
         if: runner.os == 'Linux'
@@ -58,8 +58,8 @@ jobs:
         run: |
           set -euo pipefail
           uv venv -p 3.15.0 .t
-          uv pip install -p .t/bin/python --no-index --find-links wheelhouse duckdb pyyaml markupsafe
-          .t/bin/python -c "import duckdb, yaml, markupsafe, sys; print(sys.version); print(duckdb.sql('select 42').fetchall())"
+          uv pip install -p .t/bin/python --no-index --find-links wheelhouse duckdb pyyaml
+          .t/bin/python -c "import duckdb, yaml, sys; print(sys.version); print(duckdb.sql('select 42').fetchall())"
       - name: publish
         env:
           GH_TOKEN: ${{ github.token }}

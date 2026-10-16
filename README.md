@@ -5,11 +5,11 @@ CPython 3.15 wheels for open-source packages that do not publish 3.15 wheels on 
 Every wheel here is built by `.github/workflows/build.yml`, on GitHub-hosted runners, from the
 package's own PyPI source release, pinned by version and by PyPI's sha256 in `requirements.txt`.
 Nothing is patched. The packages keep their own licenses (shipped inside each wheel): DuckDB (MIT),
-PyYAML (MIT), MarkupSafe (BSD-3-Clause).
+PyYAML (MIT).
 
 | release tag | contents |
 |---|---|
-| `cp315` | duckdb 1.5.6, pyyaml 6.0.3, markupsafe 3.0.3 for Linux x86_64 and aarch64 (manylinux) and macOS arm64 |
+| `cp315` | duckdb 1.5.6, pyyaml 6.0.3 for Linux x86_64 and aarch64 (manylinux) and macOS arm64 |
 
 ## Use with uv
 
@@ -31,4 +31,5 @@ Adding or bumping a package: edit `requirements.txt` (version and PyPI's sdist s
 `build.yml`, then `index.yml`. Adding a platform: run `build.yml` with `runners` naming ONLY the new
 runner (rebuilding a published platform changes its hashes and breaks the repos' locks), then
 `index.yml`, then re-lock each repo. Retire a package once PyPI ships a cp315 wheel for the version the
-repos lock (markupsafe 3.0.4 already does, and qualifies under the 14-day rule on 2026-10-16).
+repos lock (markupsafe was retired 2026-10-16: 3.0.4 ships its own cp315 wheels on PyPI; its 3.0.3 builds stay in the
+release but are no longer indexed).
