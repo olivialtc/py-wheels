@@ -5,9 +5,15 @@ sha256) plus the cp315 wheels this repo's release adds (with the sha256 the buil
 uv takes a package found here from here alone, so the PyPI files keep every other interpreter
 and platform installable, and the hashes keep `uv.lock` hash-checked. Stdlib only.
 
-usage: python3 scripts/make_index.py <tag> <dir holding SHA256SUMS-*.txt>
+usage: python3 scripts/make_index.py <tag> <dir holding SHA256SUMS-*.txt> [<dir holding the wheels>]
+
+With the wheels dir, the built wheels are served FROM THIS SITE (site/<tag>/files/), each
+copied only after its sha256 matches the build's record: a GitHub release asset redirects to
+objects.githubusercontent.com, which the Claude cloud sandbox's egress proxy answers with
+401, so uv in a cloud session could not download one (measured 2026-10-15).
 """
 
+import hashlib
 import html
 import json
 import pathlib
@@ -16,6 +22,7 @@ import sys
 import urllib.request
 
 REPO = "olivialtc/py-wheels"
+PAGES = "https://olivialtc.github.io/py-wheels"
 
 
 def pins(path: pathlib.Path) -> list[tuple[str, str, str]]:
@@ -27,18 +34,27 @@ def pins(path: pathlib.Path) -> list[tuple[str, str, str]]:
     return out
 
 
-def ours(tag: str, sums_dir: pathlib.Path) -> dict[str, list[tuple[str, str]]]:
+def ours(tag: str, sums_dir: pathlib.Path, wheels: pathlib.Path | None = None) -> dict[str, list[tuple[str, str]]]:
     got: dict[str, list[tuple[str, str]]] = {}
     for f in sorted(sums_dir.glob("SHA256SUMS-*.txt")):
         for line in f.read_text().splitlines():
             digest, name = line.split()
-            url = f"https://github.com/{REPO}/releases/download/{tag}/{name}"
+            if wheels is None:
+                url = f"https://github.com/{REPO}/releases/download/{tag}/{name}"
+            else:
+                blob = (wheels / name).read_bytes()
+                if hashlib.sha256(blob).hexdigest() != digest:
+                    raise SystemExit(f"make_index: {name}: sha256 differs from the build's record")
+                dest = pathlib.Path("site") / tag / "files" / name
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(blob)
+                url = f"{PAGES}/{tag}/files/{name}"
             got.setdefault(name.split("-")[0].lower(), []).append((name, f"{url}#sha256={digest}"))
     return got
 
 
-def main(tag: str, sums_dir: str) -> int:
-    built = ours(tag, pathlib.Path(sums_dir))
+def main(tag: str, sums_dir: str, wheels_dir: str | None = None) -> int:
+    built = ours(tag, pathlib.Path(sums_dir), pathlib.Path(wheels_dir) if wheels_dir else None)
     rows = []
     for name, version, sdist_sha in pins(pathlib.Path("requirements.txt")):
         with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/{version}/json", timeout=60) as r:
@@ -64,4 +80,4 @@ def main(tag: str, sums_dir: str) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(*sys.argv[1:3]))
+    sys.exit(main(*sys.argv[1:4]))
