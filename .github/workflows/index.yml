@@ -25,9 +25,11 @@ jobs:
       - name: the build's recorded hashes
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release download "${{ inputs.tag }}" -p 'SHA256SUMS-*.txt' -D sums
-      - name: write site/<tag>/index.html
-        run: python3 scripts/make_index.py "${{ inputs.tag }}" sums
+        run: |
+          gh release download "${{ inputs.tag }}" -p 'SHA256SUMS-*.txt' -D sums
+          gh release download "${{ inputs.tag }}" -p '*.whl' -D wheels
+      - name: write site/<tag>/index.html and site/<tag>/files/ (hash-checked copies)
+        run: python3 scripts/make_index.py "${{ inputs.tag }}" sums wheels
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site

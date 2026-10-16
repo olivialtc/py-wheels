@@ -20,7 +20,9 @@ find-links = ["https://olivialtc.github.io/py-wheels/cp315/"]
 
 That page (`index.yml`, GitHub Pages) is a hashed flat index: for each pinned package it lists
 EVERY file PyPI has for that version, with PyPI's sha256, plus the cp315 wheels from the release,
-with the hash the build recorded. For a version listed here, uv takes the distributions from this
+with the hash the build recorded. Those wheels are served from the Pages site itself
+(`/<tag>/files/`), copied only after their hash matches: a release-asset download redirects to a
+host the Claude cloud sandbox cannot reach (2026-10-15). For a version listed here, uv takes the distributions from this
 page, which is why PyPI's own files are listed too: every other interpreter and platform stays
 installable, and `uv.lock` stays fully hashed. A newer version on PyPI still wins when a lock is
 upgraded, so this pins nothing.
