@@ -1,0 +1,19 @@
+# Actions only. requirements.txt pins are chosen by hand (see README: add, bump, retire), because
+# a bump changes the wheels every uv.lock pinned; Dependabot security alerts still cover them.
+# The 14-day cooldown mirrors ops/toolchain_catalog.json's stable rule.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/New_York"
+    cooldown:
+      default-days: 14
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "deps"
