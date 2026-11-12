@@ -27,17 +27,19 @@ PAGES = "https://olivialtc.github.io/py-wheels"
 
 def pins(path: pathlib.Path) -> list[tuple[str, str, str]]:
     out = []
-    for line in path.read_text().splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         m = re.match(r"^([A-Za-z0-9_.-]+)==(\S+)\s+--hash=sha256:([0-9a-f]{64})", line)
         if m:
             out.append(m.groups())
     return out
 
 
-def ours(tag: str, sums_dir: pathlib.Path, wheels: pathlib.Path | None = None) -> dict[str, list[tuple[str, str]]]:
+def ours(
+    tag: str, sums_dir: pathlib.Path, wheels: pathlib.Path | None = None
+) -> dict[str, list[tuple[str, str]]]:
     got: dict[str, list[tuple[str, str]]] = {}
     for f in sorted(sums_dir.glob("SHA256SUMS-*.txt")):
-        for line in f.read_text().splitlines():
+        for line in f.read_text(encoding="utf-8").splitlines():
             digest, name = line.split()
             if wheels is None:
                 url = f"https://github.com/{REPO}/releases/download/{tag}/{name}"
@@ -74,7 +76,9 @@ def main(tag: str, sums_dir: str, wheels_dir: str | None = None) -> int:
         rows += [f'<a href="{u}">{n}</a><br>' for n, u in dict(mine).items()]
     out = pathlib.Path("site") / tag / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("<!DOCTYPE html>\n<html><body>\n" + "\n".join(rows) + "\n</body></html>\n")
+    out.write_text(
+        "<!DOCTYPE html>\n<html><body>\n" + "\n".join(rows) + "\n</body></html>\n", encoding="utf-8"
+    )
     print(f"make_index: {len(rows)} file(s) -> {out}")
     return 0
 

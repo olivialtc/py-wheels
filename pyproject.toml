@@ -1,0 +1,20 @@
+# Lint config only: py-wheels is not a Python package. Mirrors the sibling repos (ruff, typos,
+# rumdl; lint-1112/P1-12). Pins: ruff 0.17.3, typos-cli 1.51.1, rumdl 0.2.79 (same as LTC).
+[tool.ruff]
+line-length = 110
+# The build and smoke-test steps run Python 3.15 (build.yml).
+target-version = "py315"
+extend-exclude = [".venv", "__pycache__", "site", "dist", "wheelhouse", "wheels", "sums"]
+
+[tool.ruff.per-file-target-version]
+# index.yml runs this file with the runner's bare python3, so it keeps syntax a 3.9 parser reads.
+"scripts/make_index.py" = "py39"
+
+[tool.ruff.lint]
+preview = true
+select = [
+    "E", "F", "W", "C901", "UP", "I", "PLW1514", "PT", "S", "RUF100",
+    "ASYNC", "LOG", "G", "PLE", "RSE", "B", "FURB", "DTZ", "BLE001", "S110", "S307", "S310", "S324",
+    "S602", "S608", "PERF401", "PLW1510", "RUF012", "RUF015", "TID251",
+]
+mccabe.max-complexity = 7

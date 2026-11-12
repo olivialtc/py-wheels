@@ -1,0 +1,5 @@
+# rumdl 0.2.79 (same pin as LTC): every rule on except MD013 (line length), which the
+# siblings also leave off until their reflow row lands.
+[global]
+disable = ["MD013"]
+exclude = ["site"]
