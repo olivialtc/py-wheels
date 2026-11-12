@@ -1,0 +1,17 @@
+# typos, pinned at typos-cli 1.51.1 (same pin as LTC). Fix a misspelling at the source; add a
+# word below only for a real noun or acronym, with a comment.
+[files]
+extend-exclude = [
+  # The published wheel index (generated HTML and the wheels it serves); gitignored here.
+  "site/**", "*.whl",
+  # Pinned dependency hashes: hex digests, not prose.
+  "requirements.txt",
+]
+
+[default]
+extend-ignore-re = [
+  # The line-level waiver, as in the sibling repos.
+  "(?Rm)^.*#.*spellchecker:disable-line$",
+  # Commit-SHA / hash prefixes: all-hex with at least one digit, never an English word.
+  "\\b[0-9a-f]*[0-9][0-9a-f]*\\b",
+]

@@ -1,0 +1,31 @@
+# Baseline lint (lint-1112/P1-12): ruff, typos, rumdl, pinned to the same versions as LTC.
+# A separate file, not a job in build.yml/index.yml: those are workflow_dispatch-only release
+# jobs with write permissions, and this must run on every PR without touching them.
+name: lint
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.6"
+          enable-cache: false
+      - name: ruff check
+        run: uvx ruff@0.17.3 check --output-format=github .
+      - name: ruff format --check
+        run: uvx ruff@0.17.3 format --check .
+      - name: typos
+        run: uvx --from typos==1.51.1 typos
+      - name: rumdl check
+        run: uvx rumdl@0.2.79 check .
