@@ -26,6 +26,14 @@ PAGES = "https://olivialtc.github.io/py-wheels"
 
 
 def pins(path: pathlib.Path) -> list[tuple[str, str, str]]:
+    """Read the hash-pinned packages out of a requirements file.
+
+    Args:
+        path: The requirements file; only `name==version --hash=sha256:<hex>` lines count.
+
+    Returns:
+        One (name, version, sdist sha256) tuple per pinned line, in file order.
+    """
     out = []
     for line in path.read_text(encoding="utf-8").splitlines():
         m = re.match(r"^([A-Za-z0-9_.-]+)==(\S+)\s+--hash=sha256:([0-9a-f]{64})", line)
@@ -37,6 +45,21 @@ def pins(path: pathlib.Path) -> list[tuple[str, str, str]]:
 def ours(
     tag: str, sums_dir: pathlib.Path, wheels: pathlib.Path | None = None
 ) -> dict[str, list[tuple[str, str]]]:
+    """Map each package to the wheels this repo built for a release, with hashed URLs.
+
+    Args:
+        tag: The release tag the wheels belong to.
+        sums_dir: Directory holding the build's SHA256SUMS-*.txt records.
+        wheels: Directory holding the wheel files. When given, each wheel is copied to
+            site/<tag>/files/ and linked from this site; when None, the link points at the
+            GitHub release asset.
+
+    Returns:
+        Lower-cased distribution name -> [(wheel filename, URL ending `#sha256=<digest>`)].
+
+    Raises:
+        SystemExit: A wheel's sha256 differs from the build's record.
+    """
     got: dict[str, list[tuple[str, str]]] = {}
     for f in sorted(sums_dir.glob("SHA256SUMS-*.txt")):
         for line in f.read_text(encoding="utf-8").splitlines():
@@ -56,6 +79,17 @@ def ours(
 
 
 def main(tag: str, sums_dir: str, wheels_dir: str | None = None) -> int:
+    """Write site/<tag>/index.html listing PyPI's files and this repo's wheels per package.
+
+    Args:
+        tag: The release tag, also the directory name under site/.
+        sums_dir: Directory holding the build's SHA256SUMS-*.txt records.
+        wheels_dir: Directory holding the built wheels, to serve them from this site.
+
+    Returns:
+        0 when the index was written; 1 when PyPI's sdist hash is not the pinned one or a
+        pinned package has no built wheel.
+    """
     built = ours(tag, pathlib.Path(sums_dir), pathlib.Path(wheels_dir) if wheels_dir else None)
     rows = []
     for name, version, sdist_sha in pins(pathlib.Path("requirements.txt")):

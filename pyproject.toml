@@ -16,5 +16,8 @@ select = [
     "E", "F", "W", "C901", "UP", "I", "PLW1514", "PT", "S", "RUF100",
     "ASYNC", "LOG", "G", "PLE", "RSE", "B", "FURB", "DTZ", "BLE001", "S110", "S307", "S310", "S324",
     "S602", "S608", "PERF401", "PLW1510", "RUF012", "RUF015", "TID251",
+    # Docstrings (lint-1112/P3-91, P3-92): every public name carries a Google-style docstring.
+    "D",
 ]
+pydocstyle.convention = "google"
 mccabe.max-complexity = 7
